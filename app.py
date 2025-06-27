@@ -202,9 +202,9 @@ if db_path:
                 for field, data in details.items():
                     if not data['match']:
                         mismatched_rows.append({
-                            "ฟิลด์": field,
-                            "ข้อมูลจาก PDF": data['pdf'],
-                            "ข้อมูลจากฐานข้อมูล": data['db']
+                            "List": field,
+                            "Certificate CAL": data['pdf'],
+                            "Database": data['db']
                         })
                 
                 if mismatched_rows:
