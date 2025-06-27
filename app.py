@@ -11,7 +11,7 @@ if 'file_uploader_key' not in st.session_state:
     st.session_state.file_uploader_key = 0
 
 # --- การตั้งค่าหน้าเว็บ ---
-st.set_page_config(page_title="ตรวจสอบใบรายงานผลสอบเทียบอัตโนมัติ", layout="wide")
+st.set_page_config(page_title="Calibration Report Validator", layout="wide")
 
 # --- ฟังก์ชันสำหรับโหลด CSS และฟอนต์ ---
 def load_custom_css():
