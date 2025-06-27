@@ -11,7 +11,7 @@ if 'file_uploader_key' not in st.session_state:
     st.session_state.file_uploader_key = 0
 
 # --- การตั้งค่าหน้าเว็บ ---
-st.set_page_config(page_title="ตรวจสอบใบรายงานผลสอบเทียบอัตโนมัติ", layout="wide")
+st.set_page_config(page_title="Calibration Report Validator", layout="wide")
 
 # --- ฟังก์ชันสำหรับโหลด CSS และฟอนต์ ---
 def load_custom_css():
@@ -129,11 +129,11 @@ def verify_report(pdf_data, db_dataframe):
         comparison_results[field] = {'pdf': pdf_val, 'db': db_val, 'match': match}
         if not match: mismatched_fields.append(field)
     if not mismatched_fields: return {"status": "valid", "message": "ข้อมูลถูกต้องตรงกันทุกรายการ", "details": comparison_results}
-    else: return {"status": "invalid", "message": f"ข้อมูลไม่ตรงกันในฟิลด์: {', '.join(mismatched_fields)}", "details": comparison_results}
+    else: return {"status": "invalid", "message": f"ข้อมูลไม่ตรงกัน: {', '.join(mismatched_fields)}", "details": comparison_results}
 
 # --- ส่วนหลักของโปรแกรม ---
 st.title("ตรวจสอบใบรายงานผลสอบเทียบอัตโนมัติ")
-st.write("อัปโหลดไฟล์ใบรายงานผล PDF ของคุณเพื่อเริ่มต้นการตรวจสอบ")
+st.write("อัปโหลดไฟล์ใบรายงานผล PDF ของคุณเพื่อเริ่มต้นการตรวจสอบ (ไม่เกิน 30 ไฟล์ ต่อครั้ง)")
 st.divider()
 
 db_path = find_database_file()
@@ -180,9 +180,9 @@ if db_path:
                     else: 
                         st.warning(f"**สถานะ:** เกิดข้อผิดพลาด")
                 
-                with st.expander("▶ คลิกเพื่อดูรายละเอียด"):
+                with st.expander("▼ คลิกเพื่อดูรายละเอียด"):
                     if 'details' in verification_result:
-                        details_df = pd.DataFrame([(f, values['pdf'], values['db'], '✅' if values['match'] else '❌') for f, values in verification_result['details'].items()], columns=["ฟิลด์", "จาก PDF", "จากฐานข้อมูล", "ผลลัพธ์"])
+                        details_df = pd.DataFrame([(f, values['pdf'], values['db'], '✅' if values['match'] else '❌') for f, values in verification_result['details'].items()], columns=["List", "Certificate CAL", "Database", "ผลลัพธ์"])
                         st.table(details_df)
                     else:
                          st.warning(verification_result['message'])
@@ -190,22 +190,22 @@ if db_path:
         # --- จุดที่แก้ไข: เปลี่ยนการแสดงผลสรุปเป็น Text Block ที่ Copy ง่าย ---
         if mismatched_files_summary:
             st.divider()
-            st.subheader("สรุปไฟล์ที่ข้อมูลไม่ถูกต้อง (สำหรับส่งต่อ)")
+            st.subheader("สรุปใบรายงานผลที่ข้อมูลไม่ตรง (โปรดตรวจสอบ)")
             
             summary_text_lines = []
-            summary_text_lines.append("สรุปไฟล์ที่ข้อมูลไม่ถูกต้อง:")
+            summary_text_lines.append("สรุปใบรายงานผลที่ข้อมูลไม่ตรง:")
             summary_text_lines.append("--------------------------------")
 
             for filename, details in mismatched_files_summary.items():
-                summary_text_lines.append(f"\n📄 ไฟล์: {filename}")
+                summary_text_lines.append(f"\n📄 ไฟล์ {filename}")
                 
                 mismatched_fields_count = 0
                 for field, data in details.items():
-                    if not data['match']:
+                    if not data['match']
                         mismatched_fields_count += 1
-                        summary_text_lines.append(f"   - {field}:")
-                        summary_text_lines.append(f"     - จาก PDF: {data['pdf']}")
-                        summary_text_lines.append(f"     - ฐานข้อมูล: {data['db']}")
+                        summary_text_lines.append(f"   ● {field}")
+                        summary_text_lines.append(f"     - Certificate CAL▶ {data['pdf']}")
+                        summary_text_lines.append(f"     - Database▶ {data['db']}")
                 
                 if mismatched_fields_count == 0:
                     # กรณีพิเศษ: สถานะเป็น invalid แต่ไม่มีฟิลด์ไม่ตรงกัน (เช่น หา Cert No. ไม่เจอใน DB)
