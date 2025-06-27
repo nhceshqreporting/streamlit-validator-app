@@ -201,7 +201,7 @@ if db_path:
                 
                 mismatched_fields_count = 0
                 for field, data in details.items():
-                    if not data['match']
+                    if not data['match']:
                         mismatched_fields_count += 1
                         summary_text_lines.append(f"   ● {field}")
                         summary_text_lines.append(f"     - Certificate CAL ▶ {data['pdf']}")
