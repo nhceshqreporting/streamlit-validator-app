@@ -11,7 +11,7 @@ if 'file_uploader_key' not in st.session_state:
     st.session_state.file_uploader_key = 0
 
 # --- การตั้งค่าหน้าเว็บ ---
-st.set_page_config(page_title="ระบบตรวจสอบใบรับรอง", layout="wide")
+st.set_page_config(page_title="ตรวจสอบใบรายงานผลสอบเทียบอัตโนมัติ", layout="wide")
 
 # --- ฟังก์ชันสำหรับโหลด CSS และฟอนต์ (เวอร์ชันอัปเดต) ---
 def load_custom_css():
@@ -134,8 +134,8 @@ def verify_report(pdf_data, db_dataframe):
     else: return {"status": "invalid", "message": f"ข้อมูลไม่ตรงกันในฟิลด์: {', '.join(mismatched_fields)}", "details": comparison_results}
 
 # --- ส่วนหลักของโปรแกรม ---
-st.title("ระบบตรวจสอบใบรับรองอัตโนมัติ")
-st.write("อัปโหลดไฟล์ PDF ของคุณเพื่อเริ่มต้นการตรวจสอบ")
+st.title("ตรวจสอบใบรายงานผลสอบเทียบอัตโนมัติ")
+st.write("อัปโหลดไฟล์ใบรายงานผล PDF ของคุณเพื่อเริ่มต้นการตรวจสอบ")
 st.divider()
 
 # --- จุดที่แก้ไข: ลบส่วนแสดงสถานะด้านบนออก ---
@@ -151,7 +151,7 @@ if db_path:
         st.divider()
         col1, col2 = st.columns([3, 1])
         with col1:
-            st.info(f"พบ {len(uploaded_files)} ไฟล์ จะเริ่มทำการตรวจสอบตามลำดับ...")
+            st.info(f"พบ {len(uploaded_files)} ไฟล์ จะเริ่มทำการตรวจสอบตามลำดับ")
         with col2:
             if st.button("ล้างไฟล์ทั้งหมด", use_container_width=True, type="primary"):
                 st.session_state.file_uploader_key += 1; st.rerun()
@@ -172,7 +172,7 @@ if db_path:
                     elif verification_result['status'] == 'invalid': st.error(f"**สถานะ:** ข้อมูลไม่ตรงกัน")
                     else: st.warning(f"**สถานะ:** เกิดข้อผิดพลาด")
                 
-                with st.expander("▶ คลิกเพื่อดูรายละเอียด"):
+                with st.expander("คลิกเพื่อดูรายละเอียด"):
                     if 'details' in verification_result:
                         details_df = pd.DataFrame([(f, values['pdf'], values['db'], '✅' if values['match'] else '❌') for f, values in verification_result['details'].items()], columns=["ฟิลด์", "จาก PDF", "จากฐานข้อมูล", "ผลลัพธ์"])
                         st.table(details_df)
