@@ -1,4 +1,4 @@
-# --- โค้ดฉบับสมบูรณ์ (เวอร์ชัน 8.1 - Final Footer & Font Fix) ---
+# --- โค้ดฉบับสมบูรณ์ (เวอร์ชัน 8.4 - สรุปผลแบบตารางละเอียด) ---
 
 import streamlit as st
 import pandas as pd
@@ -13,7 +13,7 @@ if 'file_uploader_key' not in st.session_state:
 # --- การตั้งค่าหน้าเว็บ ---
 st.set_page_config(page_title="ตรวจสอบใบรายงานผลสอบเทียบอัตโนมัติ", layout="wide")
 
-# --- ฟังก์ชันสำหรับโหลด CSS และฟอนต์ (เวอร์ชันอัปเดต) ---
+# --- ฟังก์ชันสำหรับโหลด CSS และฟอนต์ ---
 def load_custom_css():
     st.markdown("""
         <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,7 +21,6 @@ def load_custom_css():
         <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
         
         <style>
-            /* --- จุดที่แก้ไข: บังคับใช้ฟอนต์ Prompt กับทุกอย่างรวมถึง Headers --- */
             html, body, [class*="st-"], h1, h2, h3, h4, h5, h6 {
                 font-family: 'Prompt', sans-serif !important;
             }
@@ -31,7 +30,6 @@ def load_custom_css():
                 border-radius: 10px;
                 padding: 1rem 1rem 1.5rem 1rem;
             }
-            /* --- จุดที่แก้ไข: เพิ่ม Style สำหรับ Footer --- */
             .footer {
                 position: fixed;
                 left: 0;
@@ -50,7 +48,7 @@ def load_custom_css():
 
 load_custom_css()
 
-# --- ส่วนของฟังก์ชัน (Backend - ไม่เปลี่ยนแปลง) ---
+# --- ส่วนของฟังก์ชัน (Backend) ---
 @st.cache_data
 def find_database_file(directory="."):
     for filename in os.listdir(directory):
@@ -138,7 +136,6 @@ st.title("ตรวจสอบใบรายงานผลสอบเที�
 st.write("อัปโหลดไฟล์ใบรายงานผล PDF ของคุณเพื่อเริ่มต้นการตรวจสอบ")
 st.divider()
 
-# --- จุดที่แก้ไข: ลบส่วนแสดงสถานะด้านบนออก ---
 db_path = find_database_file()
 
 if db_path:
@@ -155,34 +152,76 @@ if db_path:
         with col2:
             if st.button("ล้างไฟล์ทั้งหมด", use_container_width=True, type="primary"):
                 st.session_state.file_uploader_key += 1; st.rerun()
+        
         st.subheader("ผลการตรวจสอบ:")
+        
+        # --- จุดที่แก้ไข 1: สร้าง dictionary สำหรับเก็บรายละเอียดไฟล์ที่ผิดพลาด ---
+        mismatched_files_summary = {}
+
         for uploaded_file in uploaded_files:
             with st.container(border=True):
                 col1, col2 = st.columns([3, 1])
                 with col1:
                     st.markdown(f"**ไฟล์:** `{uploaded_file.name}`")
+                
                 with st.spinner('⏳ กำลังวิเคราะห์ไฟล์...'):
                     uploaded_file.seek(0)
                     pdf_data = extract_data_from_pdf(uploaded_file)
+                
                 if not pdf_data:
                     st.warning("ไม่สามารถสกัดข้อมูลจากไฟล์นี้ได้อย่างสมบูรณ์"); continue
+
                 verification_result = verify_report(pdf_data, df_database)
-                with col2:
-                    if verification_result['status'] == 'valid': st.success(f"**สถานะ:** ตรงกันทุกรายการ")
-                    elif verification_result['status'] == 'invalid': st.error(f"**สถานะ:** ข้อมูลไม่ตรงกัน")
-                    else: st.warning(f"**สถานะ:** เกิดข้อผิดพลาด")
                 
-                with st.expander("คลิกเพื่อดูรายละเอียด"):
+                with col2:
+                    if verification_result['status'] == 'valid': 
+                        st.success(f"**สถานะ:** ตรงกันทุกรายการ")
+                    elif verification_result['status'] == 'invalid': 
+                        st.error(f"**สถานะ:** ข้อมูลไม่ตรงกัน")
+                        # --- จุดที่แก้ไข 2: เก็บรายละเอียดของไฟล์ที่ไม่ตรงกัน ---
+                        mismatched_files_summary[uploaded_file.name] = verification_result.get('details', {})
+                    else: 
+                        st.warning(f"**สถานะ:** เกิดข้อผิดพลาด")
+                
+                with st.expander("▶ คลิกเพื่อดูรายละเอียด"):
                     if 'details' in verification_result:
                         details_df = pd.DataFrame([(f, values['pdf'], values['db'], '✅' if values['match'] else '❌') for f, values in verification_result['details'].items()], columns=["ฟิลด์", "จาก PDF", "จากฐานข้อมูล", "ผลลัพธ์"])
                         st.table(details_df)
                     else:
                          st.warning(verification_result['message'])
+        
+        # --- จุดที่แก้ไข 3: แสดงผลสรุปแบบตารางละเอียด ---
+        if mismatched_files_summary:
+            st.divider()
+            st.warning("สรุปรายการไฟล์และฟิลด์ที่ข้อมูลไม่ถูกต้อง:")
+            
+            for filename, details in mismatched_files_summary.items():
+                st.markdown(f"**ไฟล์:** `{filename}`")
+                
+                mismatched_rows = []
+                for field, data in details.items():
+                    if not data['match']:
+                        mismatched_rows.append({
+                            "ฟิลด์": field,
+                            "ข้อมูลจาก PDF": data['pdf'],
+                            "ข้อมูลจากฐานข้อมูล": data['db']
+                        })
+                
+                if mismatched_rows:
+                    summary_df = pd.DataFrame(mismatched_rows)
+                    st.dataframe(summary_df, use_container_width=True, hide_index=True)
+                st.markdown("---") # คั่นระหว่างไฟล์
+
+        elif uploaded_files:
+            st.divider()
+            st.success("🎉 ยอดเยี่ยม! ไฟล์ทั้งหมดที่ตรวจสอบถูกต้องตรงกันทุกรายการ")
+            st.balloons()
+
 else:
     st.error("ไม่พบไฟล์ฐานข้อมูล กรุณาวางไฟล์ Excel ที่ชื่อขึ้นต้นด้วย 'ใบขอรับบริการ' ในโฟลเดอร์เดียวกับโปรแกรม")
 
 
-# --- จุดที่แก้ไข: เพิ่ม Footer ที่ด้านล่างสุดของหน้าจอ ---
+# --- Footer ---
 if db_path:
     footer_text = f"สถานะฐานข้อมูล: พบไฟล์ `{os.path.basename(db_path)}`"
 else:
