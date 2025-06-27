@@ -185,7 +185,7 @@ if db_path:
                 
                 with st.expander("▶ คลิกเพื่อดูรายละเอียด"):
                     if 'details' in verification_result:
-                        details_df = pd.DataFrame([(f, values['pdf'], values['db'], '✅' if values['match'] else '❌') for f, values in verification_result['details'].items()], columns=["ฟิลด์", "จาก PDF", "จากฐานข้อมูล", "ผลลัพธ์"])
+                        details_df = pd.DataFrame([(f, values['pdf'], values['db'], '✅' if values['match'] else '❌') for f, values in verification_result['details'].items()], columns=["List", "Certificate CAL", "Database", "ผลลัพธ์"])
                         st.table(details_df)
                     else:
                          st.warning(verification_result['message'])
