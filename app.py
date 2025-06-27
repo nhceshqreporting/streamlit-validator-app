@@ -204,8 +204,8 @@ if db_path:
                     if not data['match']
                         mismatched_fields_count += 1
                         summary_text_lines.append(f"   ● {field}")
-                        summary_text_lines.append(f"     - Certificate CAL▶ {data['pdf']}")
-                        summary_text_lines.append(f"     - Database▶ {data['db']}")
+                        summary_text_lines.append(f"     - Certificate CAL ▶ {data['pdf']}")
+                        summary_text_lines.append(f"     - Database ▶ {data['db']}")
                 
                 if mismatched_fields_count == 0:
                     # กรณีพิเศษ: สถานะเป็น invalid แต่ไม่มีฟิลด์ไม่ตรงกัน (เช่น หา Cert No. ไม่เจอใน DB)
