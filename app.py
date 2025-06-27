@@ -1,4 +1,4 @@
-# --- โค้ดฉบับสมบูรณ์ (เวอร์ชัน 8.4 - สรุปผลแบบตารางละเอียด) ---
+# --- โค้ดฉบับสมบูรณ์ (เวอร์ชัน 8.5 - LINE Friendly Summary) ---
 
 import streamlit as st
 import pandas as pd
@@ -11,7 +11,7 @@ if 'file_uploader_key' not in st.session_state:
     st.session_state.file_uploader_key = 0
 
 # --- การตั้งค่าหน้าเว็บ ---
-st.set_page_config(page_title="Calibration Report Validator", layout="wide")
+st.set_page_config(page_title="ตรวจสอบใบรายงานผลสอบเทียบอัตโนมัติ", layout="wide")
 
 # --- ฟังก์ชันสำหรับโหลด CSS และฟอนต์ ---
 def load_custom_css():
@@ -155,9 +155,7 @@ if db_path:
         
         st.subheader("ผลการตรวจสอบ:")
         
-        # --- จุดที่แก้ไข 1: สร้าง dictionary สำหรับเก็บรายละเอียดไฟล์ที่ผิดพลาด ---
         mismatched_files_summary = {}
-
         for uploaded_file in uploaded_files:
             with st.container(border=True):
                 col1, col2 = st.columns([3, 1])
@@ -178,45 +176,49 @@ if db_path:
                         st.success(f"**สถานะ:** ตรงกันทุกรายการ")
                     elif verification_result['status'] == 'invalid': 
                         st.error(f"**สถานะ:** ข้อมูลไม่ตรงกัน")
-                        # --- จุดที่แก้ไข 2: เก็บรายละเอียดของไฟล์ที่ไม่ตรงกัน ---
                         mismatched_files_summary[uploaded_file.name] = verification_result.get('details', {})
                     else: 
                         st.warning(f"**สถานะ:** เกิดข้อผิดพลาด")
                 
                 with st.expander("▶ คลิกเพื่อดูรายละเอียด"):
                     if 'details' in verification_result:
-                        details_df = pd.DataFrame([(f, values['pdf'], values['db'], '✅' if values['match'] else '❌') for f, values in verification_result['details'].items()], columns=["List", "Certificate CAL", "Database", "ผลลัพธ์"])
+                        details_df = pd.DataFrame([(f, values['pdf'], values['db'], '✅' if values['match'] else '❌') for f, values in verification_result['details'].items()], columns=["ฟิลด์", "จาก PDF", "จากฐานข้อมูล", "ผลลัพธ์"])
                         st.table(details_df)
                     else:
                          st.warning(verification_result['message'])
         
-        # --- จุดที่แก้ไข 3: แสดงผลสรุปแบบตารางละเอียด ---
+        # --- จุดที่แก้ไข: เปลี่ยนการแสดงผลสรุปเป็น Text Block ที่ Copy ง่าย ---
         if mismatched_files_summary:
             st.divider()
-            st.warning("สรุปรายการไฟล์และฟิลด์ที่ข้อมูลไม่ถูกต้อง:")
+            st.subheader("สรุปไฟล์ที่ข้อมูลไม่ถูกต้อง (สำหรับส่งต่อ)")
             
+            summary_text_lines = []
+            summary_text_lines.append("สรุปไฟล์ที่ข้อมูลไม่ถูกต้อง:")
+            summary_text_lines.append("--------------------------------")
+
             for filename, details in mismatched_files_summary.items():
-                st.markdown(f"**ไฟล์:** `{filename}`")
+                summary_text_lines.append(f"\n📄 ไฟล์: {filename}")
                 
-                mismatched_rows = []
+                mismatched_fields_count = 0
                 for field, data in details.items():
                     if not data['match']:
-                        mismatched_rows.append({
-                            "List": field,
-                            "Certificate CAL": data['pdf'],
-                            "Database": data['db']
-                        })
+                        mismatched_fields_count += 1
+                        summary_text_lines.append(f"   - {field}:")
+                        summary_text_lines.append(f"     - จาก PDF: {data['pdf']}")
+                        summary_text_lines.append(f"     - ฐานข้อมูล: {data['db']}")
                 
-                if mismatched_rows:
-                    summary_df = pd.DataFrame(mismatched_rows)
-                    st.dataframe(summary_df, use_container_width=True, hide_index=True)
-                st.markdown("---") # คั่นระหว่างไฟล์
+                if mismatched_fields_count == 0:
+                    # กรณีพิเศษ: สถานะเป็น invalid แต่ไม่มีฟิลด์ไม่ตรงกัน (เช่น หา Cert No. ไม่เจอใน DB)
+                    summary_text_lines.append(f"   - หมายเหตุ: ไม่พบ Certificate No. ในฐานข้อมูล")
+
+
+            final_summary = "\n".join(summary_text_lines)
+            st.code(final_summary, language=None)
 
         elif uploaded_files:
             st.divider()
             st.success("🎉 ยอดเยี่ยม! ไฟล์ทั้งหมดที่ตรวจสอบถูกต้องตรงกันทุกรายการ")
             st.balloons()
-
 else:
     st.error("ไม่พบไฟล์ฐานข้อมูล กรุณาวางไฟล์ Excel ที่ชื่อขึ้นต้นด้วย 'ใบขอรับบริการ' ในโฟลเดอร์เดียวกับโปรแกรม")
 
